@@ -1,0 +1,17 @@
+// This is a placeholder - the actual schema is shared from icon-radar-shared
+// In production, this would be a symlink to the shared schema
+
+// For development, copy the schema from icon-radar-shared/prisma/schema.prisma
+// Or use a relative path in package.json scripts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Note: The actual schema should be copied from the shared database schema
+// This service uses the same database as other Icon Radar services
