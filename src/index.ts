@@ -11,9 +11,13 @@ import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import { logger, correlationId, requestLogger } from '@enekwe/icon-radar-shared';
 import agentRoutes from './routes/agents';
+import { AIClientFactory } from './lib/ai';
 
 // Load environment variables
 dotenv.config();
+
+// Initialize AI clients
+AIClientFactory.initialize();
 
 // Initialize Prisma client
 export const prisma = new PrismaClient({
@@ -53,6 +57,9 @@ app.get('/health', async (req: Request, res: Response) => {
     // Check database connection
     await prisma.$queryRaw`SELECT 1`;
 
+    // Check AI clients
+    const aiHealth = await AIClientFactory.healthCheck();
+
     res.status(200).json({
       status: 'healthy',
       service: 'ai-agents',
@@ -60,6 +67,7 @@ app.get('/health', async (req: Request, res: Response) => {
       uptime: process.uptime(),
       checks: {
         database: 'healthy',
+        ai: aiHealth,
         memory: process.memoryUsage()
       }
     });
@@ -69,7 +77,7 @@ app.get('/health', async (req: Request, res: Response) => {
       status: 'unhealthy',
       service: 'ai-agents',
       timestamp: new Date().toISOString(),
-      error: 'Database connection failed'
+      error: 'Service health check failed'
     });
   }
 });
