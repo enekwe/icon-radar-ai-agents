@@ -4,7 +4,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import logger from '../utils/logger';
+import { logger } from '@enekwe/icon-radar-shared';
 import { SocialMetrics, AgentExecutionResult } from '../types';
 
 export class BrandTrendService {

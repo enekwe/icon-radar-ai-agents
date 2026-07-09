@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import logger from '../utils/logger';
+import { logger } from '@enekwe/icon-radar-shared';
 
 export interface AuthenticatedRequest extends Request {
   user?: {

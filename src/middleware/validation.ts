@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodError } from 'zod';
-import logger from '../utils/logger';
+import { logger } from '@enekwe/icon-radar-shared';
 
 export function validateRequest(schema: z.ZodObject<any, any>) {
   return (req: Request, res: Response, next: NextFunction) => {

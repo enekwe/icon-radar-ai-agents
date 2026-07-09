@@ -9,8 +9,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
+import { logger, correlationId, requestLogger } from '@enekwe/icon-radar-shared';
 import agentRoutes from './routes/agents';
-import logger from './utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -43,19 +43,9 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const correlationId = req.headers['x-correlation-id'] as string || `req-${Date.now()}`;
-  req.headers['x-correlation-id'] = correlationId;
-
-  logger.info(`${req.method} ${req.path}`, {
-    correlationId,
-    ip: req.ip,
-    userAgent: req.get('user-agent')
-  });
-
-  next();
-});
+// Request logging and correlation ID from shared package
+app.use(correlationId);
+app.use(requestLogger);
 
 // Health check endpoints
 app.get('/health', async (req: Request, res: Response) => {

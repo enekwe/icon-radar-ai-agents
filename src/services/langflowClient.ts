@@ -3,7 +3,7 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import logger from '../utils/logger';
+import { logger } from '@enekwe/icon-radar-shared';
 
 export interface FlowExecutionResult {
   id: string;

@@ -4,7 +4,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import logger from '../utils/logger';
+import { logger } from '@enekwe/icon-radar-shared';
 import { BrandLinkService } from './brandlinkService';
 import { BizDataCleanService } from './bizdatacleanService';
 import { BrandTrendService } from './brandtrendService';
