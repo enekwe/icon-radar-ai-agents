@@ -40,7 +40,10 @@ export class AIClientFactory {
     }
 
     if (!this.primaryClient && !this.fallbackClient) {
-      throw new Error('Failed to initialize any AI clients. Check your API keys and configuration.');
+      logger.warn('No AI clients initialized. Service will run in limited mode.');
+      logger.warn('Please configure at least one of: GLM_API_KEY, DEEPSEEK_API_KEY, or QWEN_API_KEY');
+      // Don't throw - let service run without AI capabilities for now
+      // Individual endpoints can handle the missing client gracefully
     }
   }
 
