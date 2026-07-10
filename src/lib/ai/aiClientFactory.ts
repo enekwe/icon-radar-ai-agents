@@ -18,7 +18,7 @@ export class AIClientFactory {
    */
   static initialize(): void {
     const primaryProvider = (process.env.AI_PROVIDER_PRIMARY as AIProvider) || 'glm';
-    const fallbackProvider = (process.env.AI_PROVIDER_FALLBACK as AIProvider) || 'deepseek';
+    const fallbackProvider = (process.env.AI_PROVIDER_FALLBACK as AIProvider) || 'qwen';
 
     logger.info('Initializing AI clients', {
       primary: primaryProvider,
