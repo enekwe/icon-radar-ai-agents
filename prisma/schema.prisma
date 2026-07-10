@@ -1,11 +1,10 @@
-// This is a placeholder - the actual schema is shared from icon-radar-shared
-// In production, this would be a symlink to the shared schema
-
-// For development, copy the schema from icon-radar-shared/prisma/schema.prisma
-// Or use a relative path in package.json scripts
+// Icon Radar AI Agents Service - Prisma Schema
+// This service shares the database with the main backend service
+// and needs access to Athlete, Brand, and related models
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -13,5 +12,206 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Note: The actual schema should be copied from the shared database schema
-// This service uses the same database as other Icon Radar services
+// Core Models needed by AI Agents service
+
+model Athlete {
+  id            String                        @id @default(uuid())
+  name          String
+  sport         String?
+  status        AthleteStatus                 @default(ACTIVE)
+  socialHandles Json?                         // Stores Instagram, Twitter, TikTok handles
+
+  // Brand search status tracking
+  brandSearchStatus    BrandSearchStatus      @default(UNSEARCHED)
+  lastBrandSearchAt    DateTime?
+  brandSearchAttempts  Int                    @default(0)
+
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
+
+  // Relations
+  brandRelationships AthleteBrandRelationship[]
+  championIndexScores ChampionIndexScore[]
+
+  @@index([name])
+  @@index([sport])
+  @@index([status])
+  @@index([brandSearchStatus])
+  @@index([lastBrandSearchAt])
+}
+
+model Brand {
+  id             String   @id @default(uuid())
+  name           String   @db.VarChar(255)
+  website        String?  @db.VarChar(500)
+  category       String?  @db.VarChar(100)
+  description    String?  @db.Text
+  logoUrl        String?  @db.VarChar(500)
+  socialProfiles Json?    // Stores social media profile URLs
+  isArchived     Boolean  @default(false)
+  archivedAt     DateTime?
+  dataQualityScore Decimal? @db.Decimal(3, 2) // 0.00 to 1.00
+  lastMetricsUpdate DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  athleteRelationships AthleteBrandRelationship[]
+  metrics              BrandMetric[]
+  championIndexScores  ChampionIndexScore[]
+
+  @@index([name])
+  @@index([category])
+  @@index([updatedAt])
+  @@index([lastMetricsUpdate])
+  @@index([dataQualityScore])
+  @@index([name], map: "brand_name_search_idx")
+  @@index([description], map: "brand_description_search_idx")
+  @@index([category, isArchived])
+  @@index([isArchived, lastMetricsUpdate])
+  @@index([category, updatedAt])
+  @@index([isArchived, dataQualityScore])
+  @@index([category, dataQualityScore, isArchived])
+}
+
+model AthleteBrandRelationship {
+  id                   String               @id @default(uuid())
+  athleteId            String
+  brandId              String
+  relationshipType     RelationshipType     @default(OWNER)
+  ownershipPercentage  Decimal?             @db.Decimal(5, 2)
+  verificationStatus   VerificationStatus   @default(PENDING)
+  verificationSource   String?
+  verificationDate     DateTime?
+  notes                String?              @db.Text
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  // Relations
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  brand   Brand   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([athleteId, brandId])
+  @@index([athleteId])
+  @@index([brandId])
+  @@index([relationshipType])
+  @@index([verificationStatus])
+  @@index([athleteId, relationshipType])
+  @@index([brandId, verificationStatus])
+  @@index([athleteId, verificationStatus])
+  @@index([relationshipType, verificationStatus])
+  @@index([verificationDate, verificationStatus])
+}
+
+model BrandMetric {
+  id                      String   @id @default(uuid())
+  brandId                 String
+  metricDate              DateTime @default(now())
+
+  // Social Media Metrics
+  instagramFollowers      Int?
+  instagramEngagementRate Decimal? @db.Decimal(5, 2)
+  instagramPostsCount     Int?
+
+  tiktokFollowers         Int?
+  tiktokEngagementRate    Decimal? @db.Decimal(5, 2)
+  tiktokVideosCount       Int?
+
+  twitterFollowers        Int?
+  twitterEngagementRate   Decimal? @db.Decimal(5, 2)
+
+  linkedinFollowers       Int?
+  linkedinEmployees       Int?
+
+  // Website Metrics
+  websiteTraffic          Int?
+  websiteTrafficGrowth    Decimal? @db.Decimal(5, 2)
+  domainAuthority         Int?
+
+  // Sentiment & Other Metrics
+  sentimentScore          Decimal? @db.Decimal(3, 2)
+  mediaPresenceScore      Decimal? @db.Decimal(3, 2)
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@index([metricDate])
+  @@index([brandId, metricDate])
+  @@index([metricDate, brandId])
+}
+
+model ChampionIndexScore {
+  id               String   @id @default(uuid())
+  brandId          String
+  athleteId        String
+
+  // Individual Score Components
+  socialScore      Decimal  @db.Decimal(10, 2)
+  growthScore      Decimal  @db.Decimal(10, 2)
+  engagementScore  Decimal  @db.Decimal(10, 2)
+  trafficScore     Decimal  @db.Decimal(10, 2)
+  sentimentScore   Decimal  @db.Decimal(10, 2)
+
+  // Weighted Total Score
+  totalScore       Decimal  @db.Decimal(10, 2)
+
+  // Ranking
+  rank             Int?
+  previousRank     Int?
+  rankChange       Int?
+
+  calculationDate  DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  brand   Brand   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, athleteId, calculationDate])
+  @@index([brandId])
+  @@index([athleteId])
+  @@index([rank])
+  @@index([calculationDate])
+  @@index([calculationDate, rank])
+  @@index([totalScore, calculationDate])
+  @@index([brandId, calculationDate])
+  @@index([athleteId, calculationDate])
+  @@index([rank, totalScore])
+}
+
+// Enums
+
+enum AthleteStatus {
+  ACTIVE
+  INACTIVE
+  RETIRED
+}
+
+enum BrandSearchStatus {
+  UNSEARCHED
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum RelationshipType {
+  OWNER
+  CO_OWNER
+  INVESTOR
+  PARTNER
+  ENDORSER
+  ADVISOR
+  AMBASSADOR
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}

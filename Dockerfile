@@ -1,5 +1,8 @@
 # Icon Radar AI Agents Service - Dockerfile
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
+
+# Install OpenSSL for Prisma compatibility
+RUN apk add --no-cache openssl openssl-dev
 
 WORKDIR /app
 
@@ -20,7 +23,10 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine
+FROM node:20-alpine
+
+# Install OpenSSL for Prisma compatibility
+RUN apk add --no-cache openssl openssl-dev
 
 WORKDIR /app
 
